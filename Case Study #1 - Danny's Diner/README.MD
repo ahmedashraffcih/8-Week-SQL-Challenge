@@ -143,13 +143,13 @@ ORDER BY customer_id
 ### **Q3. What was the first item from the menu purchased by each customer?**
 ```sql
 WITH cte_order AS(
-  SELECT 
+  	SELECT 
   		customer_id,
   		m.product_name,
 		ROW_NUMBER() OVER( 
-          PARTITION BY customer_id 
-          ORDER BY s.product_id,s.order_date) AS item_order
-  FROM dannys_diner.sales AS s
+        PARTITION BY customer_id 
+        ORDER BY s.product_id,s.order_date) AS item_order
+  	FROM dannys_diner.sales AS s
 	LEFT JOIN dannys_diner.menu AS m
 	ON s.product_id = m.product_id
 )
@@ -187,20 +187,20 @@ limit 1
 ### **Q5. Which item was the most popular for each customer?**
 ```sql
 WITH count_orders AS(
-  SELECT 
+  	SELECT 
   		customer_id,
   		m.product_name,
   		count(*) AS order_count
-  FROM dannys_diner.sales AS s
+  	FROM dannys_diner.sales AS s
 	LEFT JOIN dannys_diner.menu AS m
 	ON s.product_id = m.product_id
-  GROUP BY customer_id,m.product_name
-  ORDER BY customer_id,order_count desc
+  	GROUP BY customer_id,m.product_name
+  	ORDER BY customer_id,order_count desc
 ),
 popular AS (
 	SELECT *, 
   	RANK() OVER(PARTITION BY customer_id ORDER BY order_count desc)AS rank
-  FROM count_orders
+  	FROM count_orders
 )
 SELECT * FROM popular
 WHERE rank = 1
@@ -222,24 +222,24 @@ WHERE rank = 1
 
 ```sql
 WITH members_orders AS(
-  SELECT 
+  	SELECT 
   		s.customer_id,
  		order_date,
   		join_date,
   		product_id,
 		ROW_NUMBER() OVER( 
-          PARTITION BY s.customer_id 
-          ORDER BY s.order_date) AS item_order
-  FROM dannys_diner.sales AS s
+		PARTITION BY s.customer_id 
+		ORDER BY s.order_date) AS item_order
+	FROM dannys_diner.sales AS s
 	LEFT JOIN dannys_diner.members AS m
 	ON s.customer_id = m.customer_id
-  WHERE order_date >= join_date
+  	WHERE order_date >= join_date
 )
 SELECT 
-		customer_id,
-		product_name,
-        order_date,
-        join_date
+	customer_id,
+	product_name,
+	order_date,
+	join_date
 FROM members_orders AS o
 LEFT JOIN dannys_diner.menu AS x
 ON x.product_id =  o.product_id
@@ -259,27 +259,27 @@ ORDER BY customer_id
 ```sql
 with before_members_orders as(
   SELECT 
-  		s.customer_id,
- 		order_date,
-  		join_date,
-  		product_id,
-		RANK() over( 
-          partition by s.customer_id 
-          order by s.order_date desc) AS item_order -- order the dates in descending order to get latest purchase first
-  FROM dannys_diner.sales as s
+	s.customer_id,
+	order_date,
+	join_date,
+	product_id,
+	RANK() over( 
+	partition by s.customer_id 
+	order by s.order_date desc) AS item_order -- order the dates in descending order to get latest purchase first
+  	FROM dannys_diner.sales as s
 	left join dannys_diner.members as m
 	on s.customer_id = m.customer_id
-  where order_date < join_date
+  	where order_date < join_date
 )
 select 
-		customer_id,
-		product_name,
-        order_date,
-        join_date
+	customer_id,
+	product_name,
+	order_date,
+	join_date
 from before_members_orders as o
 left join dannys_diner.menu as x
 on x.product_id =  o.product_id
- where item_order=1
+where item_order=1
 order by customer_id
 
 ```
@@ -295,9 +295,9 @@ order by customer_id
 ### **Q8. What is the total items and amount spent for each member before they became a member?**
 ```sql
 SELECT 
-		s.customer_id,
-        COUNT(s.product_id) AS Items,
-        SUM(price) AS total_price
+	s.customer_id,
+	COUNT(s.product_id) AS Items,
+	SUM(price) AS total_price
 FROM dannys_diner.sales AS s
 JOIN dannys_diner.menu as m
 	ON s.product_id = m.product_id
@@ -320,11 +320,11 @@ ORDER BY customer_id
 ### **Q9. If each $1 spent equates to 10 points and sushi has a 2x points multiplier - how many points would each customer have?**
 ```sql
 SELECT 
-		s.customer_id,
-        SUM(
-        	CASE WHEN m.product_name = 'sushi' THEN price*20
-          	ELSE price*10
-          	END) AS total_points
+	s.customer_id,
+	SUM(
+		CASE WHEN m.product_name = 'sushi' THEN price*20
+		ELSE price*10
+		END) AS total_points
 FROM dannys_diner.sales AS s
 JOIN dannys_diner.menu as m
 	ON s.product_id = m.product_id
@@ -345,16 +345,16 @@ ORDER BY customer_id
 WITH dates_cte AS 
 (
    SELECT *, 
-      DATEADD(DAY, 6, join_date) AS valid_date, 
-      EOMONTH('2021-01-31') AS last_date
+	DATEADD(DAY, 6, join_date) AS valid_date, 
+	EOMONTH('2021-01-31') AS last_date
    FROM dannys_diner.members AS m
 )
 SELECT 
-		s.customer_id,
-        SUM(
-        	CASE WHEN s.product_name = 'sushi' THEN price*20
-          	WHEN s.order_date between d.join_date and d.valid_date THEN price*20
-          ELSE price*10	END) AS total_points
+	s.customer_id,
+	SUM(
+		CASE WHEN s.product_name = 'sushi' THEN price*20
+		WHEN s.order_date between d.join_date and d.valid_date THEN price*20
+		ELSE price*10	END) AS total_points
 FROM dates_cte AS d
 JOIN dannys_diner.sales AS s
 	ON s.customer_id = d.customer_id
